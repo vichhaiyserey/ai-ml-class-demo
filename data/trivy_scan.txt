@@ -1,0 +1,7 @@
+=== Trivy Scan Report ===
+Found vulnerabilities:
+- CVE-2023-12345 in python:high
+- CVE-2023-98765 in alpine:medium
+- CVE-2022-54321 in node:critical
+Remediation: Update python to 3.11.2, alpine to 3.18, node to 18.17.0.
+Summary: 3 high, 2 medium, 1 critical issues detected.

@@ -1,0 +1,17 @@
+# Core scientific stack
+numpy==2.5.4
+pandas==3.0.6
+scikit-learn==1.9.1
+joblib==1.6.0
+scipy==1.18.1
+
+# Visualization
+matplotlib==3.11.2
+seaborn==0.13.2
+plotly==7.1.0
+
+# Web app
+streamlit==1.66.0
+
+# LLM (OpenAI-compatible; also used for local Ollama/Qwen)
+openai==3.33.0

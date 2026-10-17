@@ -8,6 +8,7 @@ small Retrieval-Augmented Generation (RAG) demo grounded in a Trivy scan report.
 
 | # | Section | Covers |
 |---|---------|--------|
+<<<<<<< HEAD
 | 1 | Python basics | types, truthiness, loops, functions, collections, comprehensions, errors, files |
 | 2 | NumPy | arrays & reshape, indexing/slicing, broadcasting, aggregations, matrix ops, randomness, visualisations |
 | 3 | Pandas | Series/DataFrame, describe, filter, parsing scan output |
@@ -20,20 +21,39 @@ small Retrieval-Augmented Generation (RAG) demo grounded in a Trivy scan report.
 | 10 | LLM Playground | temperature / top-p / max-tokens explained, live speed metrics |
 | 11 | RAG (Trivy) | TF-IDF retrieval over a scan report + grounded answers |
 | 12 | RAG (summary) | query-focused summarizer over notes + tuning guide and key lessons |
+=======
+| 1 | Python basics | types, f-strings, comprehensions, lambdas, `Counter` |
+| 2 | NumPy | arrays, reshape, vectorised math, random stats |
+| 3 | Pandas | Series/DataFrame, describe, filter, parsing scan output |
+| 4 | Visualization | matplotlib, seaborn, plotly |
+| 5 | Regression | linear regression + MSE / R² |
+| 6 | Classification | logistic regression / KNN + confusion matrix |
+| 7 | Pipeline + Pickle | `Pipeline`, joblib save → load → predict |
+| 8 | LLM Chat | OpenAI-compatible chat & code-gen (works with local Qwen) |
+| 9 | RAG (Trivy) | TF-IDF retrieval over a scan report + grounded answers |
+>>>>>>> 80c0539 (Initial commit: interactive AI/ML class demo Streamlit app)
 
 ## Project layout
 
 ```
 ai_ml_demo/
+<<<<<<< HEAD
 ├── app.py                  # Streamlit app (all 12 sections)
+=======
+├── app.py                  # Streamlit app (all 10 sections)
+>>>>>>> 80c0539 (Initial commit: interactive AI/ML class demo Streamlit app)
 ├── llm_client.py           # OpenAI-compatible LLM client (graceful offline mode)
 ├── rag_engine.py           # Lightweight TF-IDF RAG engine
 ├── requirements.txt
 ├── data/
 │   ├── sample_data.csv     # tiny tabular dataset
+<<<<<<< HEAD
 │   ├── customers.csv       # messy churn dataset for the ML Workflow page
 │   ├── trivy_scan.txt      # sample security scan report for RAG
 │   └── notes/              # weekly team notes for the RAG summarizer page
+=======
+│   └── trivy_scan.txt      # sample security scan report for RAG
+>>>>>>> 80c0539 (Initial commit: interactive AI/ML class demo Streamlit app)
 ├── exercises/              # standalone scripts (run one at a time)
 │   ├── 01_basic_python.py
 │   ├── 02_numpy.py
@@ -43,9 +63,12 @@ ai_ml_demo/
 │   ├── 06_pipeline_pickle.py
 │   ├── 07_llm_chat.py
 │   └── 08_rag_trivy.py
+<<<<<<< HEAD
 ├── notebooks/              # Jupyter notebooks for hands-on practice
 │   ├── 01_ml_workflow.ipynb
 │   └── 02_llm_and_rag.ipynb
+=======
+>>>>>>> 80c0539 (Initial commit: interactive AI/ML class demo Streamlit app)
 └── models/                 # saved .joblib artifacts (git-ignored)
 ```
 
@@ -80,6 +103,7 @@ python exercises\07_llm_chat.py
 python exercises\08_rag_trivy.py
 ```
 
+<<<<<<< HEAD
 ## Run the notebooks
 
 ```powershell
@@ -94,6 +118,8 @@ jupyter notebook notebooks
 
 Notebooks run from the `notebooks/` folder and read data from `../data`.
 
+=======
+>>>>>>> 80c0539 (Initial commit: interactive AI/ML class demo Streamlit app)
 ## Enabling the LLM sections
 
 The LLM chat and RAG answer-generation work in **offline mode** by default
@@ -124,4 +150,8 @@ The same env vars work for the standalone exercise scripts.
 - Everything runs locally; no data leaves your machine unless you configure an
   external LLM endpoint.
 - Saved models land in `models/` and are intentionally git-ignored — regenerate
+<<<<<<< HEAD
   them from the app or `exercises/06_pipeline_pickle.py`.
+=======
+  them from the app or `exercises/06_pipeline_pickle.py`.
+>>>>>>> 80c0539 (Initial commit: interactive AI/ML class demo Streamlit app)
