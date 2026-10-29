@@ -10,7 +10,11 @@ returns an offline response so the demo still works.
 """
 from __future__ import annotations
 
+import json
 import os
+import time
+import urllib.error
+import urllib.request
 from dataclasses import dataclass, field
 
 
@@ -39,7 +43,7 @@ class LLMClient:
             from openai import OpenAI
         except ImportError as exc:  # pragma: no cover
             raise RuntimeError("openai package not installed") from exc
-        kwargs = {"api_key": self.api_key or "ollama", "temperature": self.temperature}
+        kwargs = {"api_key": self.api_key or "ollama"}
         if self.base_url:
             kwargs["base_url"] = self.base_url
         self._client = OpenAI(**kwargs)
@@ -51,7 +55,9 @@ class LLMClient:
         if not self.is_live:
             return self._offline(messages)
         client = self._get_client()
-        resp = client.chat.completions.create(model=self.model, messages=messages)
+        resp = client.chat.completions.create(
+            model=self.model, messages=messages, temperature=self.temperature
+        )
         return resp.choices[0].message.content or ""
 
     def ask(self, prompt: str, system: str | None = None) -> str:
@@ -84,3 +90,66 @@ class LLMClient:
             "Set LLM_API_KEY or LLM_BASE_URL (e.g. http://localhost:11434/v1 for Ollama/Qwen).\n\n"
             f"You asked: {last}"
         )
+
+
+# --------------------------------------------------------------------------- #
+# Ollama native API helpers (used by the educational playground)
+# --------------------------------------------------------------------------- #
+def _ollama_root(base_url: str | None) -> str:
+    """Turn an OpenAI-style base URL into the Ollama server root."""
+    base = (base_url or "http://localhost:11434/v1").rstrip("/")
+    if base.endswith("/v1"):
+        base = base[:-3]
+    return base
+
+
+def list_ollama_models(base_url: str | None = None,
+                       timeout: float = 3.0) -> list[dict]:
+    """Return installed Ollama models as [{'name', 'size'}]; [] if unavailable."""
+    try:
+        with urllib.request.urlopen(
+            f"{_ollama_root(base_url)}/api/tags", timeout=timeout
+        ) as resp:
+            data = json.load(resp)
+    except (urllib.error.URLError, OSError, ValueError):
+        return []
+    return [
+        {"name": m.get("name") or m.get("model", ""), "size": m.get("size", 0)}
+        for m in data.get("models", [])
+    ]
+
+
+def ollama_chat(model: str, messages: list[dict], base_url: str | None = None,
+                options: dict | None = None, keep_alive: str | int = "5m",
+                timeout: float = 600.0) -> dict:
+    """Chat via Ollama's native /api/chat, returning content plus timing metrics."""
+    payload = {
+        "model": model,
+        "messages": messages,
+        "stream": False,
+        "options": options or {},
+        "keep_alive": keep_alive,
+    }
+    request = urllib.request.Request(
+        f"{_ollama_root(base_url)}/api/chat",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    started = time.perf_counter()
+    with urllib.request.urlopen(request, timeout=timeout) as resp:
+        data = json.load(resp)
+    elapsed = time.perf_counter() - started
+
+    eval_count = int(data.get("eval_count", 0) or 0)
+    eval_ns = data.get("eval_duration", 0) or 0
+    toks_per_s = eval_count / (eval_ns / 1e9) if eval_ns else 0.0
+    return {
+        "content": (data.get("message") or {}).get("content", ""),
+        "eval_count": eval_count,
+        "prompt_eval_count": int(data.get("prompt_eval_count", 0) or 0),
+        "total_seconds": elapsed,
+        "tokens_per_second": toks_per_s,
+        "done_reason": data.get("done_reason", ""),
+    }
+
