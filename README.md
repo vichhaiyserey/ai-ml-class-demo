@@ -8,18 +8,19 @@ small Retrieval-Augmented Generation (RAG) demo grounded in a Trivy scan report.
 
 | # | Section | Covers |
 |---|---------|--------|
-| 1 | Python basics | types, truthiness, loops, functions, collections, comprehensions, errors, files |
-| 2 | NumPy | arrays & reshape, indexing/slicing, broadcasting, aggregations, matrix ops, randomness, visualisations |
-| 3 | Pandas | Series/DataFrame, describe, filter, parsing scan output |
-| 4 | Visualization | chart gallery, distributions & skew, pairplots, heatmaps/clustermaps, feature selection, stacked charts, BI dashboard |
-| 5 | Regression | linear regression + MSE / R² |
-| 6 | Classification | logistic regression / KNN + confusion matrix |
-| 7 | Pipeline + Pickle | `Pipeline`, joblib save → load → predict |
-| 8 | ML Workflow | guided steps: select → clean → filter/features → explore → train → pipeline & predict |
-| 9 | LLM Chat | OpenAI-compatible chat & code-gen (works with local Qwen) |
-| 10 | LLM Playground | temperature / top-p / max-tokens explained, live speed metrics |
-| 11 | RAG (Trivy) | TF-IDF retrieval over a scan report + grounded answers |
-| 12 | RAG (summary) | query-focused summarizer over notes + tuning guide and key lessons |
+| 1 | AI & ML Foundations | Evolution vs. Foundation, data cleansing, preparation, tuning & why it matters, interactive lab |
+| 2 | Python basics | types, truthiness, loops, functions, collections, comprehensions, errors, files |
+| 3 | NumPy | arrays & reshape, indexing/slicing, broadcasting, aggregations, matrix ops, randomness, visualisations |
+| 4 | Pandas | Series/DataFrame, describe, filter, parsing scan output |
+| 5 | Visualization | chart gallery, distributions & skew, pairplots, heatmaps/clustermaps, feature selection, stacked charts, BI dashboard |
+| 6 | Regression | linear regression + MSE / R² |
+| 7 | Classification | logistic regression / KNN + confusion matrix |
+| 8 | Pipeline + Pickle | `Pipeline`, joblib save → load → predict |
+| 9 | ML Workflow | guided steps: select → clean → filter/features → explore → train → pipeline & predict |
+| 10 | LLM Chat | OpenAI-compatible chat & code-gen (works with local Qwen) |
+| 11 | LLM Playground | temperature / top-p / max-tokens explained, live speed metrics |
+| 12 | RAG (Trivy) | TF-IDF retrieval over a scan report + grounded answers |
+| 13 | RAG (summary) | query-focused summarizer over notes + tuning guide and key lessons |
 
 ## Project layout
 

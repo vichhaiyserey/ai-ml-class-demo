@@ -1,0 +1,8 @@
+version: 1
+type: pip
+resolver:
+    repo: dso-pypi-dev
+    serverId: Jfrog-ABA
+deployer:
+    repo: dso-pypi-dev
+    serverId: Jfrog-ABA

@@ -5,18 +5,19 @@ Run:
 
 Sections:
   1. Home
-  2. Python basics
-  3. NumPy
-  4. Pandas
-  5. Visualization
-  6. Regression
-  7. Classification
-  8. Pipeline + Pickle (save/load/evaluate)
-  9. ML Workflow (guided: data → clean → features → model → pipeline)
- 10. LLM Chat (OpenAI-compatible / local Qwen)
- 11. LLM Playground (generation settings, explained)
- 12. RAG over a Trivy scan
- 13. RAG for summarization (query-focused summarizer + tuning lessons)
+  2. AI & ML Foundations (Evolution, Data Cleansing, Preparation, Tuning & Why It Matters)
+  3. Python basics
+  4. NumPy
+  5. Pandas
+  6. Visualization
+  7. Regression
+  8. Classification
+  9. Pipeline + Pickle (save/load/evaluate)
+ 10. ML Workflow (guided: data → clean → features → model → pipeline)
+ 11. LLM Chat (OpenAI-compatible / local Qwen)
+ 12. LLM Playground (generation settings, explained)
+ 13. RAG over a Trivy scan
+ 14. RAG for summarization (query-focused summarizer + tuning lessons)
 """
 from __future__ import annotations
 
@@ -82,18 +83,19 @@ Welcome! This interactive app walks through a practical AI/ML workflow in Python
 
 | # | Section | What you learn |
 |---|---------|----------------|
-| 1 | Python basics | types, logic, loops, functions, collections, errors, files |
-| 2 | NumPy | arrays, indexing, broadcasting, aggregations, linear algebra, randomness |
-| 3 | Pandas | Series/DataFrame, indexing, parsing scan data |
-| 4 | Visualization | charts, distributions & skew, pairs, heatmaps, feature selection, BI dashboard |
-| 5 | Regression | linear regression + metrics |
-| 6 | Classification | logistic regression / KNN + metrics |
-| 7 | Pipeline + Pickle | train → save → load → evaluate |
-| 8 | ML Workflow | guided: data → clean → features → model → pipeline |
-| 9 | LLM Chat | OpenAI-compatible chat & code-gen (Qwen) |
-| 10 | LLM Playground | temperature, top-p, max tokens explained |
-| 11 | RAG | question-answering over a Trivy scan report |
-| 12 | RAG (summary) | query-focused summarizer + what to tune |
+| 1 | AI & ML Foundations | Evolution vs. Foundation, data cleansing, preparation, tuning & why it matters |
+| 2 | Python basics | types, logic, loops, functions, collections, errors, files |
+| 3 | NumPy | arrays, indexing, broadcasting, aggregations, linear algebra, randomness |
+| 4 | Pandas | Series/DataFrame, indexing, parsing scan data |
+| 5 | Visualization | charts, distributions & skew, pairs, heatmaps, feature selection, BI dashboard |
+| 6 | Regression | linear regression + metrics |
+| 7 | Classification | logistic regression / KNN + metrics |
+| 8 | Pipeline + Pickle | train → save → load → evaluate |
+| 9 | ML Workflow | guided: data → clean → features → model → pipeline |
+| 10 | LLM Chat | OpenAI-compatible chat & code-gen (Qwen) |
+| 11 | LLM Playground | temperature, top-p, max tokens explained |
+| 12 | RAG | question-answering over a Trivy scan report |
+| 13 | RAG (summary) | query-focused summarizer + what to tune |
 
 Use the sidebar to navigate. Everything runs locally and offline; the LLM
 sections light up automatically when you configure an endpoint.
@@ -103,6 +105,205 @@ sections light up automatically when you configure an endpoint.
     col1.metric("Python", "3.14")
     col2.metric("Scikit-learn", "1.9.1")
     col3.metric("Streamlit", "1.66.0")
+
+
+# --------------------------------------------------------------------------- #
+# 2. AI & ML Foundations (Prerequisites & Background)
+# --------------------------------------------------------------------------- #
+def page_foundations():
+    st.title("🏛️ AI & ML Foundations")
+    st.caption("Prerequisites, real-world data engineering, tuning fundamentals, and modern evolution.")
+
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        "Evolution vs. Foundation",
+        "Why Data Matters (GIGO)",
+        "Data Cleansing & Prep",
+        "Model Tuning & Trade-offs",
+        "Interactive Lab",
+    ])
+
+    # ---------------- Tab 1: Evolution vs Foundation ----------------
+    with tab1:
+        st.subheader("Evolution vs. Foundation in Modern AI")
+        st.markdown(
+            """
+Despite headline-grabbing advancements like LLMs, generative video, and autonomous agents,
+the mathematical and engineering foundations of AI remain surprisingly unchanged.
+Understanding what actually evolves versus what stays invariant prevents overhyping tooling
+and grounds your machine learning projects in sound engineering discipline.
+            """
+        )
+
+        st.table(
+            pd.DataFrame([
+                {
+                    "Layer": "Core Architecture",
+                    "What Changed Recently": "Mixture-of-Experts (MoE) routing and larger context windows.",
+                    "What Stayed the Same": "Still relies on neural networks and backpropagation math.",
+                },
+                {
+                    "Layer": "Training Strategy",
+                    "What Changed Recently": "Heavy use of reinforcement learning (RLHF/DPO) and synthetic data curation.",
+                    "What Stayed the Same": "Still strictly follows garbage in, garbage out.",
+                },
+                {
+                    "Layer": "Enterprise Focus",
+                    "What Changed Recently": "Swapping APIs between multiple pre-trained models.",
+                    "What Stayed the Same": "90% of the work remains cleaning and formatting company data.",
+                },
+            ])
+        )
+
+        st.info(
+            "💡 **Key Takeaway:** You don't need a PhD to deliver enterprise AI value. "
+            "Mastering data quality, schema validation, and evaluation pipelines provides 10× "
+            "more real-world impact than constantly chasing model release tweets."
+        )
+
+    # ---------------- Tab 2: Why Data Matters ----------------
+    with tab2:
+        st.subheader("Why Data Cleansing & Preparation Matter")
+        st.markdown(
+            """
+In machine learning, **the model is a mirror of your data**. A model cannot invent truth that
+does not exist in your features, nor can it magically detect when real-world distributions shift.
+            """
+        )
+
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("#### 🗑️ The Reality of Garbage In, Garbage Out")
+            st.markdown(
+                """
+- **Dirty data creates silent failures:** Unlike syntax errors that crash code, bad data lets models train without errors while predicting complete nonsense in production.
+- **Biased / unrepresentative samples:** If your training data omits edge cases, your model fails exactly when business risk is highest.
+- **Leakage of target into features:** Including future data (e.g. `cancellation_timestamp` when predicting churn) inflates test scores to 99.9% while collapsing in live usage.
+                """
+            )
+
+        with c2:
+            st.markdown("#### 💼 The 80/20 Enterprise Split")
+            st.markdown(
+                """
+- **80–90% of effort:** Data sourcing, entity resolution, deduplication, handling missing values, standardizing formats, and feature contracts.
+- **10–20% of effort:** Model selection, training, hyperparameter tuning, and API serving.
+- **Compounding ROI:** Improving data quality by 10% consistently outperforms switching to a larger model architecture.
+                """
+            )
+
+        st.caption("👉 As the famous machine learning proverb states: *Data is code, and quality is unit testing.*")
+
+    # ---------------- Tab 3: Data Cleansing & Prep ----------------
+    with tab3:
+        st.subheader("The Data Preparation Lifecycle")
+        st.markdown("Step-by-step pipeline from raw input to machine-readable tensors:")
+
+        steps_data = [
+            ("1. Data Ingestion & Auditing", "Identify missing values, duplicates, unexpected schemas, outlier spikes, and mixed types."),
+            ("2. Data Cleansing", "Deduplicate rows, handle missing entries (impute via median/mean or drop), filter corrupt records."),
+            ("3. Transformation & Normalization", "Standardize units, log-transform skewed distributions, apply MinMax or StandardScaler."),
+            ("4. Categorical Encoding", "Convert string categories to numeric representations (One-Hot Encoding, Ordinal/Target Encoding)."),
+            ("5. Feature Engineering", "Derive domain-relevant signals (ratios, date differences, aggregations, interaction terms)."),
+            ("6. Train/Val/Test Splitting", "Strict separation BEFORE any fitting or scaling to prevent data leakage."),
+        ]
+        for title, desc in steps_data:
+            with st.expander(f"📌 {title}", expanded=False):
+                st.write(desc)
+
+        st.code(
+            """# The Golden Rule of Preprocessing: Fit on Train ONLY!
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Correct: Fit scaler ONLY on X_train, then transform both
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled  = scaler.transform(X_test)  # NEVER fit on test data!""",
+            language="python",
+        )
+
+    # ---------------- Tab 4: Tuning & Trade-offs ----------------
+    with tab4:
+        st.subheader("What is Tuning and Why It Matters?")
+        st.markdown(
+            """
+Tuning is the process of adjusting parameters that control how a model learns,
+balancing **underfitting** (too simple) versus **overfitting** (memorizing noise).
+            """
+        )
+
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.markdown("#### ⚙️ Parameters vs Hyperparameters")
+            st.markdown(
+                """
+- **Model Parameters:** Learned automatically from data during training (e.g. weights $w$ and bias $b$ in neural nets / linear regression).
+- **Hyperparameters:** Configured by the engineer *before* training (e.g. learning rate, tree depth, $k$ in KNN, regularization $\\lambda$, LLM temperature).
+                """
+            )
+        with col_b:
+            st.markdown("#### ⚖️ The Bias-Variance Trade-off")
+            st.markdown(
+                """
+- **High Bias (Underfitting):** Model is too rigid to capture underlying patterns. Poor performance on both training and test sets.
+- **High Variance (Overfitting):** Model memorizes training noise and outliers. High training accuracy but fails on test data.
+- **Goal of Tuning:** Find the sweet spot where test set generalization error is minimized.
+                """
+            )
+
+        st.markdown("#### 🔍 Modern Tuning Across Paradigms")
+        st.markdown(
+            """
+| Paradigm | Typical Hyperparameters / Knobs | Common Tuning Objective |
+|---|---|---|
+| **Classical ML** (Trees, Linear, KNN) | Max depth, n_estimators, learning rate, C, K-neighbors | Maximize Cross-Validation F1 / ROC-AUC |
+| **Deep Learning** | Batch size, optimizer, dropout, learning rate schedule | Minimize validation loss without diverging |
+| **LLMs & GenAI** | Temperature, top-p, prompt engineering, LoRA rank ($r$, $\\alpha$) | Reduce hallucinations, enforce output schemas, domain accuracy |
+| **RAG Systems** | Chunk size, chunk overlap, top-k retrieval, similarity threshold | Ensure high context recall with low token noise |
+            """
+        )
+
+    # ---------------- Tab 5: Interactive Lab ----------------
+    with tab5:
+        st.subheader("Interactive Lab: Experience 'Garbage In, Garbage Out'")
+        st.markdown("Inject noise and missing values into clean data to see how model accuracy degrades.")
+
+        noise_level = st.slider("Data Noise / Corruption Rate (%)", 0, 80, 10, step=10)
+        missing_rate = st.slider("Missing Values (% rows dropped)", 0, 70, 0, step=10)
+
+        # Generate sample synthetic dataset
+        from sklearn.datasets import make_classification
+        X_clean, y_clean = make_classification(
+            n_samples=600, n_features=10, n_informative=6, n_redundant=2, random_state=42
+        )
+        rng = np.random.RandomState(42)
+
+        # Add noise
+        X_corrupted = X_clean.copy()
+        if noise_level > 0:
+            noise = rng.normal(0, (noise_level / 20.0), size=X_corrupted.shape)
+            X_corrupted += noise
+
+        # Drop rows due to missing
+        keep_n = int(len(X_corrupted) * (1.0 - missing_rate / 100.0))
+        indices = rng.permutation(len(X_corrupted))[:max(keep_n, 50)]
+        X_exp = X_corrupted[indices]
+        y_exp = y_clean[indices]
+
+        X_tr, X_te, y_tr, y_te = train_test_split(X_exp, y_exp, test_size=0.25, random_state=42)
+        model = LogisticRegression()
+        model.fit(X_tr, y_tr)
+        acc = model.score(X_te, y_te)
+
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Available Clean Samples", len(X_exp))
+        m2.metric("Test Accuracy", f"{acc * 100:.1f}%", delta=f"{(acc - 0.88) * 100:.1f}% vs Clean baseline" if noise_level > 0 or missing_rate > 0 else "Baseline")
+        m3.metric("Data Quality State", "Clean" if noise_level <= 10 and missing_rate == 0 else "Degraded")
+
+        st.caption("Notice: As noise enters or missing data reduces sample diversity, model predictive power drops sharply even with the exact same algorithm!")
+
 
 
 # --------------------------------------------------------------------------- #
@@ -2114,6 +2315,7 @@ def page_rag_summary():
 
 PAGES = {
     "Home": page_home,
+    "AI & ML Foundations": page_foundations,
     "Python basics": page_python,
     "NumPy": page_numpy,
     "Pandas": page_pandas,
