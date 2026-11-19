@@ -36,9 +36,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 
+from sklearn.cluster import KMeans
 from sklearn.datasets import load_iris, make_classification, make_regression
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.decomposition import PCA
+from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -88,14 +91,16 @@ Welcome! This interactive app walks through a practical AI/ML workflow in Python
 | 3 | NumPy | arrays, indexing, broadcasting, aggregations, linear algebra, randomness |
 | 4 | Pandas | Series/DataFrame, indexing, parsing scan data |
 | 5 | Visualization | charts, distributions & skew, pairs, heatmaps, feature selection, BI dashboard |
-| 6 | Regression | linear regression + metrics |
-| 7 | Classification | logistic regression / KNN + metrics |
-| 8 | Pipeline + Pickle | train → save → load → evaluate |
-| 9 | ML Workflow | guided: data → clean → features → model → pipeline |
-| 10 | LLM Chat | OpenAI-compatible chat & code-gen (Qwen) |
-| 11 | LLM Playground | temperature, top-p, max tokens explained |
-| 12 | RAG | question-answering over a Trivy scan report |
-| 13 | RAG (summary) | query-focused summarizer + what to tune |
+| 6 | Regression | linear regression + metrics + history |
+| 7 | Classification | multi-model comparison, metrics, deterministic ML vs LLMs |
+| 8 | ML Process & Concepts | Google Developer 7 steps, overfitting/underfitting, feature engineering, clustering, ensembles, embeddings |
+| 9 | Deep Learning & Neural Networks | perceptron, activations, backpropagation, architectures, bridge to LLMs |
+| 10 | Pipeline + Pickle | train → save → load → evaluate |
+| 11 | ML Workflow | guided: data → clean → features → model → pipeline |
+| 12 | LLM Chat | OpenAI-compatible chat & code-gen (Qwen) |
+| 13 | LLM Playground | temperature, top-p, max tokens explained |
+| 14 | RAG | question-answering over a Trivy scan report |
+| 15 | RAG (summary) | query-focused summarizer + what to tune |
 
 Use the sidebar to navigate. Everything runs locally and offline; the LLM
 sections light up automatically when you configure an endpoint.
@@ -1328,67 +1333,796 @@ def page_visualization():
 # 6. Regression
 # --------------------------------------------------------------------------- #
 def page_regression():
-    st.title("📈 Regression")
-    st.caption("Predict a continuous value with linear regression.")
+    st.title("📈 Regression: Predicting Continuous Values")
+    st.caption("Learn how regression models continuous outcomes from historical data.")
 
-    n = st.slider("samples", 50, 500, 150, 10)
-    noise = st.slider("noise", 0.0, 50.0, 10.0, 1.0)
+    # ---------------- Section 1: Why Does Regression Matter? ----------------
+    st.subheader("💡 Why Does Regression Matter?")
+    st.markdown(
+        """
+Many real-world problems involve predicting a continuous number:
+
+* 🏠 **House price**
+* 📊 **Monthly sales**
+* ☁️ **Cloud cost**
+* ⏱️ **Application response time**
+* 🛡️ **Vulnerability remediation effort**
+
+Regression helps computers learn patterns from historical data and estimate future values.
+        """
+    )
+
+    # ---------------- Section 2: A Short History ----------------
+    with st.expander("📜 A Short History: Francis Galton & Regression toward the Mean", expanded=True):
+        st.markdown(
+            """
+The term **regression** comes from a study by **Sir Francis Galton in 1886**. He observed that extremely tall or short parents tended to have children whose heights were closer to the population average. He called this phenomenon:
+
+> *"Regression toward mediocrity"*
+
+Today, this is known as **regression toward the mean**.
+
+Although the term originated in statistics, regression has become one of the most important techniques in data science and machine learning.
+            """
+        )
+
+    # ---------------- Section 3: What Is Linear Regression? ----------------
+    st.subheader("📐 What Is Linear Regression?")
+    st.markdown(
+        """
+Linear Regression finds the best straight line that describes the relationship between data:
+        """
+    )
+    st.latex(r"y = \beta_0 + \beta_1 x")
+    st.markdown(
+        """
+Where:
+* $x$ = input value (feature / independent variable)
+* $y$ = predicted value (target / dependent variable)
+* $\\beta_0$ = intercept (value of $y$ when $x = 0$)
+* $\\beta_1$ = slope (change in $y$ for each unit change in $x$)
+
+The line helps us make predictions even for values we have never seen before!
+        """
+    )
+
+    # ---------------- Section 4: Interactive Experiment ----------------
+    st.subheader("🧪 Interactive Regression Experiment")
+    st.markdown("Adjust the sliders below to see how sample size and random noise impact the fitted regression line.")
+
+    col_ctrl1, col_ctrl2 = st.columns(2)
+    with col_ctrl1:
+        n = st.slider("Samples (number of data points)", 50, 500, 150, 10)
+    with col_ctrl2:
+        noise = st.slider("Noise (random variation)", 0.0, 50.0, 10.0, 1.0)
+
     X, y = make_regression(n_samples=n, n_features=1, noise=noise, random_state=42)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     model = LinearRegression().fit(X_train, y_train)
     pred = model.predict(X_test)
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric("MSE", f"{mean_squared_error(y_test, pred):.2f}")
-    c2.metric("R²", f"{r2_score(y_test, pred):.3f}")
-    c3.metric("Coef", f"{model.coef_[0]:.2f}")
+    mse_val = mean_squared_error(y_test, pred)
+    r2_val = r2_score(y_test, pred)
+    slope_val = model.coef_[0]
+    intercept_val = model.intercept_
 
     order = np.argsort(X_test.ravel())
-    fig, ax = plt.subplots()
-    ax.scatter(X_test, y_test, label="actual", alpha=0.6)
-    ax.plot(X_test[order], pred[order], color="red", label="predicted")
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    ax.scatter(X_test, y_test, color="#1f77b4", label="Actual data points (Blue)", alpha=0.6, edgecolors="none")
+    ax.plot(X_test[order], pred[order], color="#d62728", linewidth=2.5, label="Model prediction (Red line)")
+    ax.set_title(f"Fitted Line: y = {intercept_val:.2f} + {slope_val:.2f}x", fontsize=12)
+    ax.set_xlabel("Input Feature (x)")
+    ax.set_ylabel("Target Value (y)")
+    ax.grid(True, linestyle="--", alpha=0.5)
     ax.legend()
     st.pyplot(fig)
+
+    st.markdown(
+        """
+**Understanding the Graph:**
+* 🔵 **Blue dots** = actual data points
+* 🔴 **Red line** = model prediction
+* **Samples** = number of data points
+* **Noise** = random variation in the data (*as noise increases, the data becomes harder to predict accurately*)
+        """
+    )
+
+    # ---------------- Section 5: Model Metrics ----------------
+    st.subheader("📏 Model Metrics")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Mean Squared Error (MSE)", f"{mse_val:.2f}")
+    c2.metric("R² Score", f"{r2_val:.3f}")
+    c3.metric("Slope (β₁)", f"{slope_val:.2f}")
+    c4.metric("Intercept (β₀)", f"{intercept_val:.2f}")
+
+    cm1, cm2 = st.columns(2)
+    with cm1:
+        st.markdown(
+            """
+#### Mean Squared Error (MSE)
+* Measures prediction error.
+* **Lower is better.**
+* **0** means perfect predictions.
+            """
+        )
+    with cm2:
+        st.markdown(
+            f"""
+#### R² Score
+* Measures how well the model explains the data.
+* **1.0** = perfect fit
+* **0.0** = no predictive value
+
+> **Current Result:** $R^2 = {r2_val:.3f}$  
+> This means the model explains about **{max(0.0, r2_val * 100):.1f}%** of the variation in the dataset.
+            """
+        )
+
+    # ---------------- Section 6: Why Is Regression Still Used Today? ----------------
+    st.subheader("⚡ Why Is Regression Still Used Today?")
+    st.markdown(
+        """
+Despite being over 100 years old, regression remains widely used because it is:
+
+* ✅ **Fast** to train and score
+* ✅ **Easy to understand**
+* ✅ **Easy to explain** to stakeholders and auditors
+* ✅ **Effective** for many business problems
+
+**Common use cases:**
+* 📈 **Sales forecasting**
+* 💰 **Cost prediction**
+* 🖥️ **Capacity planning**
+* ⚠️ **Risk scoring**
+* 🔒 **Security analytics**
+
+Many modern machine learning and AI techniques are built upon the same ideas of learning patterns and minimizing prediction error.
+        """
+    )
+
+    # ---------------- Section 7: Key Takeaways ----------------
+    st.info(
+        """
+### 🎯 Key Takeaways
+1. **Regression predicts continuous numerical values.**
+2. **Historical origin:** The concept originated from Francis Galton's 1886 research on hereditary stature.
+3. **Linear Regression** learns the best-fitting straight line through data ($y = \\beta_0 + \\beta_1 x$).
+4. **MSE** measures average squared prediction error (lower is better).
+5. **R²** measures how well the model explains variance in the data (closer to 1.0 is better).
+6. **Foundation of AI/ML:** Regression remains a fundamental building block of modern data science and machine learning.
+        """
+    )
+
+    # ---------------- Section 8: Learn More ----------------
+    st.subheader("📚 Learn More")
+    st.markdown(
+        """
+* 📄 **Original Paper (1886):** Francis Galton, [*Regression Towards Mediocrity in Hereditary Stature*](https://galton.org/essays/1880-1889/galton-1886-regression-towards-mediocrity.pdf)
+* 📖 **Introduction to Statistical Learning (Free Book):** [statlearning.com](https://www.statlearning.com)
+* 🧠 **Deep Learning Book:** [deeplearningbook.org](https://www.deeplearningbook.org)
+
+> *Regression may be simple, but it is one of the foundations upon which modern machine learning and AI are built.*
+        """
+    )
 
 
 # --------------------------------------------------------------------------- #
 # 7. Classification
 # --------------------------------------------------------------------------- #
 def page_classification():
-    st.title("🎯 Classification")
-    st.caption("Predict a class label and inspect the confusion matrix.")
+    st.title("🎯 Classification: Categorizing Discrete Outcomes")
+    st.caption("Learn how deterministic machine learning models predict discrete classes and discover why they remain mission-critical even in the LLM era.")
 
-    dataset = st.radio("Dataset", ["Iris (3 classes)", "Synthetic (binary)"], horizontal=True)
+    # ---------------- Section 1: Why Does Classification Matter? ----------------
+    st.subheader("💡 Why Does Classification Matter?")
+    st.markdown(
+        """
+While **regression** predicts a continuous number, **classification** predicts a categorical label or discrete decision:
 
-    if dataset.startswith("Iris"):
+* 🛡️ **Cybersecurity:** Is an incoming packet benign traffic or a DDoS attack?
+* 📧 **Spam Filtering:** Is an email spam or ham?
+* 💳 **Fraud Detection:** Is a credit card transaction legitimate or fraudulent?
+* 🏥 **Healthcare:** Does a patient scan indicate benign or malignant tissue?
+* 👤 **Customer Retention:** Will a subscriber churn next month (Yes / No)?
+
+Classification maps features into defined boundary regions to automate critical yes/no or multi-class decisions.
+        """
+    )
+
+    # ---------------- Section 2: Core Families of Classification Algorithms ----------------
+    with st.expander("🧩 Core Classification Families: How They Think", expanded=True):
+        st.markdown(
+            """
+Different classification algorithms make decisions using distinct mathematical foundations:
+
+| Model Family | Core Intuition | Strengths | Ideal Use Case |
+|---|---|---|---|
+| **Logistic Regression** | Fits an S-curve (sigmoid function) modeling class probabilities ($P(y=1|x)$) | Extremely fast, highly interpretable odds-ratios, calibrated probabilities | Baseline models, credit scoring, medical risk |
+| **Decision Tree** | Recursively splits data using greedy rules (Gini impurity / Information Gain) | Easy to visualize, mirrors human if-then logic, handles non-linear patterns | Rule-based auditing, compliance workflows |
+| **Random Forest** | Ensemble of uncorrelated decision trees with bagging & feature subsampling | Resilient to overfitting, handles high dimensionality, highly accurate | Tabular data benchmarks, churn prediction |
+| **Naive Bayes (Bayesian)** | Uses Bayes' Theorem assuming feature independence: $P(y\|x) \\propto P(y) \\prod P(x_i\|y)$ | Lightning-fast training, performs well with small data or high dimensions | Text classification, spam filters, real-time filtering |
+| **K-Nearest Neighbors (KNN)** | Instance-based / lazy learner; votes based on distance to $k$ closest neighbors | No training phase, adapts naturally to complex decision boundaries | Recommendation engines, pattern matching |
+            """
+        )
+
+    # ---------------- Section 3: Interactive Classification Experiment ----------------
+    st.subheader("🧪 Interactive Model Lab & Comparison")
+    st.markdown("Choose a dataset and model family to inspect decision performance and evaluation metrics.")
+
+    col_setup1, col_setup2 = st.columns([1, 1])
+    with col_setup1:
+        dataset_choice = st.radio("Dataset", ["Iris (3 classes, tabular)", "Synthetic (binary, 4 features)"], horizontal=True)
+    with col_setup2:
+        model_choice = st.selectbox(
+            "Classification Algorithm",
+            [
+                "Logistic Regression",
+                "Decision Tree",
+                "Random Forest",
+                "Naive Bayes (Gaussian)",
+                "K-Nearest Neighbors (KNN)",
+            ],
+        )
+
+    # Dataset loading
+    if dataset_choice.startswith("Iris"):
         data = load_iris()
         X, y = data.data, data.target
         target_names = list(data.target_names)
-        model = KNeighborsClassifier(n_neighbors=st.slider("k", 1, 15, 3))
     else:
-        X, y = make_classification(n_samples=300, n_features=4, random_state=42)
-        target_names = ["class 0", "class 1"]
-        model = LogisticRegression(max_iter=1000)
+        X, y = make_classification(
+            n_samples=350,
+            n_features=4,
+            n_informative=3,
+            n_redundant=1,
+            random_state=42,
+        )
+        target_names = ["Legitimate (0)", "Suspicious (1)"]
+
+    # Model instantiation with tailored hyperparameter tweaks
+    if model_choice == "Logistic Regression":
+        c_reg = st.slider("Regularization strength (Inverse C)", 0.01, 10.0, 1.0, 0.05)
+        model = LogisticRegression(C=c_reg, max_iter=1000)
+    elif model_choice == "Decision Tree":
+        max_depth = st.slider("Max Tree Depth", 1, 10, 3)
+        model = DecisionTreeClassifier(max_depth=max_depth, random_state=42)
+    elif model_choice == "Random Forest":
+        n_estimators = st.slider("Number of Trees (Estimators)", 10, 200, 50, 10)
+        model = RandomForestClassifier(n_estimators=n_estimators, random_state=42)
+    elif model_choice == "Naive Bayes (Gaussian)":
+        st.caption("ℹ️ Gaussian Naive Bayes calculates priors and likelihoods assuming normal feature distributions.")
+        model = GaussianNB()
+    else:  # KNN
+        k_neighbors = st.slider("Number of Neighbors (k)", 1, 15, 5)
+        model = KNeighborsClassifier(n_neighbors=k_neighbors)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.25, random_state=42, stratify=y
     )
     model.fit(X_train, y_train)
     pred = model.predict(X_test)
+    acc = accuracy_score(y_test, pred)
 
-    st.metric("Accuracy", f"{accuracy_score(y_test, pred):.3f}")
+    # Visual layout: Metrics + Confusion Matrix
+    col_res1, col_res2 = st.columns([1, 1])
+    with col_res1:
+        st.markdown("#### 📊 Evaluation Summary")
+        m1, m2 = st.columns(2)
+        m1.metric("Accuracy", f"{acc * 100:.1f}%")
+        m2.metric("Test Samples", len(y_test))
 
-    cm = confusion_matrix(y_test, pred)
-    fig, ax = plt.subplots()
-    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues",
-                xticklabels=target_names, yticklabels=target_names, ax=ax)
-    ax.set_xlabel("predicted")
-    ax.set_ylabel("actual")
-    st.pyplot(fig)
+        st.markdown(
+            f"""
+* **Selected Algorithm:** `{model_choice}`
+* **Dataset:** `{dataset_choice.split()[0]}`
+* **Classes:** {", ".join(f"`{t}`" for t in target_names)}
+            """
+        )
 
-    st.text("Classification report")
-    st.code(classification_report(y_test, pred, target_names=target_names, zero_division=0))
+        st.markdown("#### 📑 Classification Report")
+        st.code(classification_report(y_test, pred, target_names=target_names, zero_division=0))
+
+    with col_res2:
+        st.markdown("#### 🔲 Confusion Matrix")
+        cm = confusion_matrix(y_test, pred)
+        fig, ax = plt.subplots(figsize=(4.5, 3.8))
+        sns.heatmap(
+            cm,
+            annot=True,
+            fmt="d",
+            cmap="Blues",
+            xticklabels=target_names,
+            yticklabels=target_names,
+            ax=ax,
+            cbar=False,
+        )
+        ax.set_xlabel("Predicted Label", fontsize=10)
+        ax.set_ylabel("True Label", fontsize=10)
+        plt.tight_layout()
+        st.pyplot(fig)
+
+    # ---------------- Section 4: Understanding the Evaluation Metrics ----------------
+    st.subheader("📐 Understanding Classification Metrics")
+    cm_c1, cm_c2, cm_c3, cm_c4 = st.columns(4)
+    cm_c1.info("**Accuracy**\n\n$\\frac{\\text{Correct Predictions}}{\\text{Total Predictions}}$\n\nBest for balanced classes.")
+    cm_c2.info("**Precision**\n\n$\\frac{\\text{True Positives}}{\\text{True Pos} + \\text{False Pos}}$\n\nHigh cost of false alarms (e.g. spam).")
+    cm_c3.info("**Recall (Sensitivity)**\n\n$\\frac{\\text{True Positives}}{\\text{True Pos} + \\text{False Neg}}$\n\nCritical to catch all positives (e.g. cancer, fraud).")
+    cm_c4.info("**F1-Score**\n\nHarmonic mean of Precision and Recall:\n\n$2 \\times \\frac{P \\times R}{P + R}$")
+
+    # ---------------- Section 5: Why Traditional / Deterministic ML Still Rules in the LLM Era ----------------
+    st.subheader("⚡ Why Deterministic Classification Still Thrives in the LLM Era")
+    st.markdown(
+        """
+Generative AI and Large Language Models (LLMs) are revolutionary for natural language and code generation,
+**yet 90%+ of production enterprise classification still runs on classic ML algorithms (Trees, Logistic Regression, Naive Bayes, XGBoost)**.
+Here is why:
+        """
+    )
+
+    t_c1, t_c2 = st.columns(2)
+    with t_c1:
+        st.markdown(
+            """
+#### 1. ⏱️ Microsecond Latency & Cost
+* **Classic ML:** Inference runs in **0.1 to 2 milliseconds** on cheap CPU instances.
+* **LLM API:** Inference takes **300ms to 2,000ms+** and incurs per-token costs ($$$ at scale).
+* *In real-time ad bidding or payment fraud gateways, a 500ms LLM response is an immediate timeout.*
+
+#### 2. 🎯 Determinism & Auditability
+* Classic models follow explicit mathematical boundary conditions without prompt drift or stochastic hallucinations.
+* Trees and Logistic Regression provide inspectable feature weights and decision paths mandatory for regulatory compliance (e.g. FCRA, GDPR, HIPAA).
+            """
+        )
+    with t_c2:
+        st.markdown(
+            """
+#### 3. 📊 Tabular Data Dominance
+* Trees and ensembles (Random Forest, Gradient Boosting) consistently outperform LLMs on structured numerical tables, databases, and logs.
+* No need for verbose prompt serialization of rows or wasting context windows on tabular columns.
+
+#### 4. 🔒 Zero Data Leakage & Offline Friendly
+* Compact binary artifacts (`.joblib` or `.onnx` files often < 5 MB).
+* Runs completely air-gapped on edge devices, microcontrollers, or secure on-prem enclaves without external network dependencies.
+            """
+        )
+
+    st.markdown(
+        """
+> 💡 **The Modern Pattern: Hybrid Architecture**  
+> Use **Deterministic ML** for fast, high-volume frontline triage, routing, and scoring (millions of events/day) — and selectively pass edge cases or unstructured summaries to **LLMs** for human-like synthesis.
+        """
+    )
+
+    # ---------------- Section 6: Key Takeaways ----------------
+    st.info(
+        """
+### 🎯 Key Takeaways
+1. **Classification predicts discrete categorical outcomes** (Binary or Multi-class).
+2. **Algorithm diversity matters:**
+   - *Logistic Regression:* Fast, probabilistic, baseline standard.
+   - *Decision Trees & Random Forests:* Top performers for structured tabular features.
+   - *Naive Bayes:* Ultra-efficient probabilistic baseline for high-dimensional text/features.
+   - *KNN:* Intuitive neighborhood voting with zero training step.
+3. **Accuracy can deceive:** In imbalanced datasets (e.g., 99.9% fraud-free transactions), always evaluate **Precision**, **Recall**, and the **Confusion Matrix**.
+4. **LLMs vs. Traditional ML:** Deterministic ML delivers microsecond speed, tiny footprints, zero token bills, and audit-ready explainability.
+        """
+    )
+
+    # ---------------- Section 7: Learn More ----------------
+    st.subheader("📚 Learn More & Classic References")
+    st.markdown(
+        """
+* 📖 **Scikit-Learn Classifier Comparison Guide:** [scikit-learn.org/stable/auto_examples/classification](https://scikit-learn.org/stable/auto_examples/classification/plot_classifier_comparison.html)
+* 📄 **Leo Breiman (2001):** [*Random Forests* (Machine Learning Journal)](https://link.springer.com/article/10.1023/A:1010933404324)
+* 📖 **An Introduction to Statistical Learning (Free Book):** [statlearning.com](https://www.statlearning.com)
+* 📄 **Why Tree-based Models Still Outperform Deep Learning on Tabular Data (Grinsztajn et al.):** [arXiv:2207.08815](https://arxiv.org/abs/2207.08815)
+        """
+    )
+
+
+
+# --------------------------------------------------------------------------- #
+# 7b. ML Process & Core Concepts (Google Developer 7 Steps, Overfitting, etc.)
+# --------------------------------------------------------------------------- #
+def page_ml_process():
+    st.title("🔄 The 7-Step ML Process & Core Concepts")
+    st.caption("From problem definition to production monitoring: understand Google Developer's 7 steps, generalization errors, feature engineering, unsupervised & ensemble learning, big data, and vector embeddings.")
+
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+        "1 · The 7 Steps of ML",
+        "2 · Overfitting & Underfitting",
+        "3 · Feature Engineering",
+        "4 · Unsupervised Learning",
+        "5 · Ensemble Learning",
+        "6 · Big Data & Embeddings",
+    ])
+
+    # ---------------- TAB 1: 7 Steps of ML ----------------
+    with tab1:
+        st.subheader("🪜 The 7 Steps of Machine Learning (Google Developer Blueprint)")
+        st.markdown(
+            """
+In Google Developer's classic framework (*The 7 Steps of Machine Learning*), training the model is only **one small step** of a complete engineering loop:
+            """
+        )
+
+        steps = [
+            ("1. Gathering Data", "Collecting representative, unbiased historical data from databases, APIs, logs, or sensor streams. Quality here sets the ceiling for model performance."),
+            ("2. Preparing that Data", "Cleaning missing values, resolving anomalies, deduplicating, standardizing schemas, and splitting into Train / Validation / Test sets."),
+            ("3. Choosing a Model", "Selecting the appropriate architecture (Linear, Trees, Ensembles, Neural Networks) based on data size, type (tabular, text, image), latency constraints, and interpretability goals."),
+            ("4. Training", "Feeding training data to iteratively optimize internal model parameters (weights and biases) using loss functions and optimization algorithms (e.g. Gradient Descent)."),
+            ("5. Evaluation", "Testing the trained model against unseen test data to verify real-world generalization using appropriate metrics (Accuracy, F1, MSE, AUC-ROC)."),
+            ("6. Hyperparameter Tuning", "Systematically searching for the best external configuration knobs (learning rate, tree depth, regularization, number of estimators) using Grid/Random search or Bayesian optimization."),
+            ("7. Prediction / Serving", "Deploying the model to production (batch scoring, microservice REST/gRPC API, or edge device) and monitoring for concept drift and performance degradation over time."),
+        ]
+
+        for title, desc in steps:
+            with st.expander(f"📌 {title}", expanded=False):
+                st.write(desc)
+
+        st.info("💡 **Key Rule:** Machine learning is not a one-time waterfall project — it is a **continuous lifecycle feedback loop**. Real production models require ongoing re-training and monitoring for data drift.")
+
+    # ---------------- TAB 2: Overfitting & Underfitting ----------------
+    with tab2:
+        st.subheader("⚖️ Overfitting vs. Underfitting (Bias-Variance Tradeoff)")
+        st.markdown(
+            """
+* **Underfitting (High Bias):** Model is too simplistic to capture the true underlying pattern (e.g., fitting a straight line to quadratic data). Poor on both training and test data.
+* **Good Fit (Optimal Balance):** Model learns the underlying signal and generalizes reliably to new, unseen samples.
+* **Overfitting (High Variance):** Model memorizes noise, outliers, and training idiosyncrasies. High accuracy on training data, but fails catastrophically on test data.
+            """
+        )
+
+        st.markdown("#### 🧪 Interactive Polynomial Fitting Demo")
+        col_ov1, col_ov2 = st.columns(2)
+        degree = col_ov1.slider("Polynomial Degree (Model Complexity)", 1, 15, 1)
+        noise_level = col_ov2.slider("Data Noise Level", 0.05, 0.5, 0.2, 0.05)
+
+        np.random.seed(42)
+        x_raw = np.linspace(-3, 3, 40)
+        y_true = np.sin(x_raw)
+        y_noisy = y_true + np.random.normal(0, noise_level, len(x_raw))
+
+        # Polynomial fit
+        poly_coeffs = np.polyfit(x_raw, y_noisy, degree)
+        x_dense = np.linspace(-3, 3, 200)
+        y_fit = np.polyval(poly_coeffs, x_dense)
+        y_pred_samples = np.polyval(poly_coeffs, x_raw)
+        mse_samples = np.mean((y_noisy - y_pred_samples) ** 2)
+
+        fig_poly, ax_poly = plt.subplots(figsize=(8, 4))
+        ax_poly.scatter(x_raw, y_noisy, color="#1f77b4", label="Data samples (with noise)", alpha=0.7)
+        ax_poly.plot(x_dense, np.sin(x_dense), "--", color="green", label="True underlying function sin(x)")
+        ax_poly.plot(x_dense, y_fit, color="red", linewidth=2, label=f"Degree {degree} fit (MSE: {mse_samples:.3f})")
+        ax_poly.set_ylim(-2.5, 2.5)
+        ax_poly.legend(loc="upper right")
+        st.pyplot(fig_poly)
+
+        if degree == 1:
+            st.warning("⚠️ **Underfitting:** A linear degree-1 line cannot capture the curve of sin(x). High bias.")
+        elif degree in [3, 4, 5]:
+            st.success("✅ **Good Generalization:** Captures the true curvature without oscillating wildly.")
+        else:
+            st.error("🚨 **Overfitting:** High-degree polynomials oscillate wildly to touch individual noisy dots. Fails on new data!")
+
+        st.markdown(
+            """
+**How to prevent overfitting in practice:**
+1. **Regularization:** L1 (Lasso - feature sparsity) & L2 (Ridge - weight penalty).
+2. **Cross-Validation:** K-Fold cross-validation ensures validation score stability.
+3. **Pruning & Early Stopping:** Limiting tree depth or halting gradient descent before loss diverges.
+4. **Ensembles & Dropout:** Bagging multiple models or randomly muting activations.
+            """
+        )
+
+    # ---------------- TAB 3: Feature Engineering ----------------
+    with tab3:
+        st.subheader("🛠️ Feature Engineering: The Secret Weapon of Traditional ML")
+        st.markdown(
+            """
+Feature engineering is the process of using domain knowledge to extract features from raw data that make machine learning algorithms work.
+**"Coming up with features is difficult, time-consuming, requires expert knowledge. Applied machine learning is basically feature engineering."** — *Andrew Ng*
+            """
+        )
+
+        fe_col1, fe_col2 = st.columns(2)
+        with fe_col1:
+            st.markdown("#### Common Techniques:")
+            st.markdown(
+                """
+* **Scaling & Normalization:** `StandardScaler` (z-score: zero mean, unit variance) or `MinMaxScaler` [0, 1] — essential for distance-based models (KNN, SVM, Neural Nets).
+* **Categorical Encoding:**
+  - *One-Hot Encoding:* For nominal variables (`red`, `blue`, `green`).
+  - *Target / Frequency Encoding:* For high-cardinality columns (`ZIP code`, `category`).
+* **Binning / Discretization:** Converting continuous numerical ranges into cohorts (e.g., `age` → `[18-25, 26-35, 36+]`).
+                """
+            )
+        with fe_col2:
+            st.markdown("#### Advanced Domain Transforms:")
+            st.markdown(
+                """
+* **Log Transforms:** Compressing heavy-tailed/skewed power-law distributions (income, transaction amounts).
+* **Cyclical Transforms:** Encoding time features via $\\sin$ and $\\cos$ (hour of day: $23:00$ is close to $00:00$).
+* **Interaction Features:** Multiplicative terms ($x_1 \\times x_2$, e.g., $\\text{Area} = \\text{Length} \\times \\text{Width}$).
+* **Aggregations:** Rolling averages, ratios (e.g. `debt_to_income`, `velocity_last_24h`).
+                """
+            )
+
+    # ---------------- TAB 4: Unsupervised Learning ----------------
+    with tab4:
+        st.subheader("🔍 Unsupervised Learning: Finding Hidden Structure")
+        st.markdown(
+            """
+In **Supervised Learning**, data has labels ($y$). In **Unsupervised Learning**, there are **no target labels** — the algorithm discovers natural clusters, latent factors, or density patterns on its own.
+            """
+        )
+
+        unsup_col1, unsup_col2 = st.columns(2)
+        with unsup_col1:
+            st.markdown("#### 1. Clustering (e.g., K-Means)")
+            st.markdown("Groups unlabeled data into $k$ distinct partitions based on distance to cluster centroids.")
+            k_val = st.slider("Select k clusters", 2, 6, 3, key="unsup_k")
+            
+            # Simple 2D cluster demo
+            iris_unsup = load_iris()
+            X_clust = iris_unsup.data[:, :2]  # first 2 features
+            km = KMeans(n_clusters=k_val, random_state=42, n_init=10).fit(X_clust)
+            
+            fig_km, ax_km = plt.subplots(figsize=(5, 3.5))
+            ax_km.scatter(X_clust[:, 0], X_clust[:, 1], c=km.labels_, cmap="viridis", alpha=0.7)
+            ax_km.scatter(km.cluster_centers_[:, 0], km.cluster_centers_[:, 1], s=180, c="red", marker="X", label="Centroids")
+            ax_km.set_xlabel("Sepal Length")
+            ax_km.set_ylabel("Sepal Width")
+            ax_km.legend()
+            st.pyplot(fig_km)
+
+        with unsup_col2:
+            st.markdown("#### 2. Dimensionality Reduction (e.g., PCA)")
+            st.markdown("Projects high-dimensional data onto orthogonal axes of maximum variance to eliminate multicollinearity and enable 2D/3D visualization.")
+            
+            pca = PCA(n_components=2)
+            X_pca = pca.fit_transform(iris_unsup.data)
+            
+            fig_pca, ax_pca = plt.subplots(figsize=(5, 3.5))
+            for i, target_name in enumerate(iris_unsup.target_names):
+                ax_pca.scatter(X_pca[iris_unsup.target == i, 0], X_pca[iris_unsup.target == i, 1], label=target_name, alpha=0.7)
+            ax_pca.set_xlabel(f"PC1 ({pca.explained_variance_ratio_[0]*100:.1f}% var)")
+            ax_pca.set_ylabel(f"PC2 ({pca.explained_variance_ratio_[1]*100:.1f}% var)")
+            ax_pca.legend()
+            st.pyplot(fig_pca)
+
+        st.markdown(
+            """
+**Top Industry Use Cases:**
+* 🎯 **Customer Segmentation:** Grouping shoppers by purchasing patterns for personalized campaigns.
+* 🛡️ **Anomaly / Intrusion Detection:** Identifying outlier points far from normal clusters.
+* 🌌 **Preprocessing for LLMs:** PCA or UMAP to compress feature spaces before vector search.
+            """
+        )
+
+    # ---------------- TAB 5: Ensemble Learning ----------------
+    with tab5:
+        st.subheader("🌲 Ensemble Learning: The Wisdom of Crowds")
+        st.markdown(
+            """
+Ensemble methods combine multiple base models to produce a single superior model that achieves higher accuracy and stability than any individual model could on its own.
+            """
+        )
+
+        ens1, ens2, ens3 = st.columns(3)
+        with ens1:
+            st.markdown("#### 1. Bagging (Bootstrap Aggregation)")
+            st.markdown(
+                """
+* **Mechanism:** Trains multiple identical model architectures on different random bootstrap subsets of the training data in parallel.
+* **Flagship:** **Random Forest** (adds random feature subsampling).
+* **Goal:** **Reduces Variance** (fights overfitting).
+                """
+            )
+        with ens2:
+            st.markdown("#### 2. Boosting (Sequential Correction)")
+            st.markdown(
+                """
+* **Mechanism:** Trains models sequentially. Each new model specifically focuses on correcting the residual errors of the previous ones.
+* **Flagships:** **XGBoost, LightGBM, CatBoost, GradientBoosting**.
+* **Goal:** **Reduces Bias** (turns weak learners into strong learners).
+                """
+            )
+        with ens3:
+            st.markdown("#### 3. Stacking & Voting")
+            st.markdown(
+                """
+* **Mechanism:** Trains heterogeneous models (e.g. Logistic Regression + Random Forest + SVM) and uses a meta-learner or majority vote to make final calls.
+* **Goal:** Maximizes Kaggle/competition accuracy by blending diverse strengths.
+                """
+            )
+
+        st.caption("👉 In practical tabular data engineering, **XGBoost & LightGBM** remain the undisputed industry champions.")
+
+    # ---------------- TAB 6: Big Data & Embeddings ----------------
+    with tab6:
+        st.subheader("💾 Big Data & Vector Embeddings: The Bridge to Modern AI")
+        st.markdown(
+            """
+As datasets expand from thousands of rows to billions, traditional architectures transition to distributed systems and dense vector representation spaces.
+            """
+        )
+
+        bd_c1, bd_c2 = st.columns(2)
+        with bd_c1:
+            st.markdown("#### 🐘 Big Data in ML")
+            st.markdown(
+                """
+* **When single-machine RAM runs out:**
+  - **Chunked / Streaming Training:** Incremental learners with `partial_fit` (SGDClassifier, MiniBatchKMeans).
+  - **Distributed Processing:** Apache Spark (PySpark MLlib), Dask, Ray for petabyte-scale transformations.
+  - **Columnar Formats:** Parquet, Arrow, and DuckDB replace naive slow CSV files with high-compression, vectorized columnar queries.
+                """
+            )
+        with bd_c2:
+            st.markdown("#### 🧬 What Are Vector Embeddings?")
+            st.markdown(
+                """
+* **From Sparse to Dense:**
+  - One-hot encoding creates huge, sparse vectors with 0 semantic understanding (`cat` and `dog` are completely orthogonal).
+  - **Embeddings** map discrete entities (words, documents, users, products) into dense, continuous vector spaces (e.g., 768 or 1536 dimensions).
+* **Semantic Geometry:**
+  - In embedding space, similar concepts sit close together ($\cos(\theta) \\approx 1.0$).
+  - Classic analogy: $\\vec{\\text{King}} - \\vec{\\text{Man}} + \\vec{\\text{Woman}} \\approx \\vec{\\text{Queen}}$.
+  - Powers modern **Vector Search (RAG), Semantic Search, and RecSys**.
+                """
+            )
+
+
+# --------------------------------------------------------------------------- #
+# 7c. Deep Learning & Neural Networks (The Bridge to Modern LLMs)
+# --------------------------------------------------------------------------- #
+def page_deep_learning_neural_networks():
+    st.title("🧠 Deep Learning & Neural Networks: The Bridge to Modern LLMs")
+    st.caption("How we evolved from individual artificial neurons to backpropagation, deep multi-layer networks, transformers, and today's Large Language Models.")
+
+    dl_tab1, dl_tab2, dl_tab3, dl_tab4 = st.tabs([
+        "1 · The Artificial Neuron & Forward Pass",
+        "2 · Backpropagation & Gradient Descent",
+        "3 · Neural Architectures Evolution",
+        "4 · The Direct Bridge to LLMs",
+    ])
+
+    # ---------------- TAB 1: The Artificial Neuron ----------------
+    with dl_tab1:
+        st.subheader("🔬 The Perceptron: The Fundamental Atom of Deep Learning")
+        st.markdown(
+            """
+An artificial neuron mimics a biological brain neuron: it receives multiple numerical inputs, multiplies them by learned weights, sums them with a bias, and passes the result through a non-linear **activation function**.
+            """
+        )
+        st.latex(r"z = \sum_{i=1}^n w_i x_i + b \quad \longrightarrow \quad a = \sigma(z)")
+
+        st.markdown("#### 🧪 Interactive Neuron Simulator")
+        col_n1, col_n2, col_n3 = st.columns(3)
+        x1_val = col_n1.slider("Input x₁", -5.0, 5.0, 1.5, 0.1)
+        x2_val = col_n2.slider("Input x₂", -5.0, 5.0, -1.0, 0.1)
+        b_val = col_n3.slider("Bias (b)", -5.0, 5.0, 0.5, 0.1)
+
+        col_w1, col_w2, col_act = st.columns(3)
+        w1_val = col_w1.slider("Weight w₁", -3.0, 3.0, 0.8, 0.1)
+        w2_val = col_w2.slider("Weight w₂", -3.0, 3.0, -1.2, 0.1)
+        act_func = col_act.selectbox("Activation Function", ["ReLU", "Sigmoid", "Tanh", "Linear"])
+
+        z_sum = (w1_val * x1_val) + (w2_val * x2_val) + b_val
+        if act_func == "ReLU":
+            output_a = max(0.0, z_sum)
+        elif act_func == "Sigmoid":
+            output_a = 1.0 / (1.0 + np.exp(-np.clip(z_sum, -20, 20)))
+        elif act_func == "Tanh":
+            output_a = np.tanh(z_sum)
+        else:
+            output_a = z_sum
+
+        m_c1, m_c2 = st.columns(2)
+        m_c1.metric("Weighted Sum (z)", f"{z_sum:.3f}")
+        m_c2.metric(f"Activated Output ({act_func})", f"{output_a:.3f}")
+
+        st.markdown(
+            """
+**Why Activation Functions Are Mandatory:**  
+Without non-linear activation functions (like ReLU), stacking 100 neural layers collapses mathematically into a single boring linear equation ($W_2(W_1 x + b_1) + b_2 = W_{combined} x + b_{new}$). **Non-linear activations grant neural networks the superpower to approximate any complex function (Universal Approximation Theorem).**
+            """
+        )
+
+    # ---------------- TAB 2: Backprop & Gradient Descent ----------------
+    with dl_tab2:
+        st.subheader("⚙️ How Neural Networks Actually Learn")
+        st.markdown(
+            """
+Neural network learning happens through a continuous 2-phase dance:
+
+1. **Forward Propagation:** Data flows forward through layers to compute a prediction $\\hat{y}$.
+2. **Loss Computation:** The Loss Function $L(\\hat{y}, y)$ quantifies how far off the prediction is from reality.
+3. **Backpropagation (Chain Rule of Calculus):** Calculates the partial derivative $\\frac{\\partial L}{\\partial w}$ for every single weight in the network from right to left:
+            """
+        )
+        st.latex(r"\frac{\partial L}{\partial w_1} = \frac{\partial L}{\partial \hat{y}} \cdot \frac{\partial \hat{y}}{\partial z_2} \cdot \frac{\partial z_2}{\partial a_1} \cdot \frac{\partial a_1}{\partial z_1} \cdot \frac{\partial z_1}{\partial w_1}")
+        st.markdown(
+            """
+4. **Gradient Descent Optimization:** Every parameter is nudged in the opposite direction of the gradient to reduce loss:
+            """
+        )
+        st.latex(r"w \leftarrow w - \alpha \cdot \frac{\partial L}{\partial w}")
+        st.caption("Where $\\alpha$ is the **Learning Rate**.")
+
+        st.info(
+            "💡 **Key Insight:** Modern LLMs with 70 billion parameters are trained using this exact same fundamental equation, scaled across thousands of GPUs running distributed parallel AdamW optimizers."
+        )
+
+    # ---------------- TAB 3: Evolution of Architectures ----------------
+    with dl_tab3:
+        st.subheader("🏛️ Architectural Evolution: From MLP to Transformers")
+        st.markdown(
+            """
+| Architecture | Key Innovation | Major Weakness | Revolutionized |
+|---|---|---|---|
+| **MLP (Multilayer Perceptron)** | Fully connected feedforward dense layers | Destroys spatial / sequential context, parameter explosion | Tabular feature modeling |
+| **CNN (Convolutional Neural Net)** | Convolutional kernels with shared weights & spatial invariance | Fixed grid structure, struggles with sequential text | Computer Vision (ImageNet, ResNet) |
+| **RNN / LSTM / GRU** | Recurrent loops maintaining internal hidden state over time | Vanishing gradients, sequential bottleneck (cannot parallelize training on GPUs) | Early Speech recognition, early machine translation |
+| **Transformer (2017)** | **Self-Attention Mechanism** ($Q, K, V$) discarding recurrence entirely; fully parallelizable | Quadratic complexity $O(N^2)$ in context length without sparse optimizations | **Modern Generative AI, LLMs, Vision Transformers** |
+            """
+        )
+
+    # ---------------- TAB 4: The Direct Bridge to LLMs ----------------
+    with dl_tab4:
+        st.subheader("🌉 The Direct Bridge: How Deep Learning Built Today's LLMs")
+        st.markdown(
+            """
+Every modern Large Language Model (Qwen, GPT-4, Llama, Claude, Gemini) is fundamentally a **Decoder-only Deep Transformer Neural Network**.
+Here is how classic deep learning evolved into generative AI:
+            """
+        )
+
+        st.markdown(
+            """
+```
+Raw Text (Corpus)
+       ↓
+[Tokenizer]: Chunks words into token IDs
+       ↓
+[Token Embedding + Positional Encoding]: Maps discrete token IDs to high-dimensional continuous vectors
+       ↓
+[Stack of Transformer Decoder Blocks]:
+  ├── Multi-Head Self-Attention (Query, Key, Value calculations across all tokens)
+  ├── LayerNorm / RMSNorm (Stabilizes deep gradients)
+  ├── Feed-Forward Networks (MLP blocks storing factual world knowledge)
+  └── Residual Skip Connections (x + f(x) preventing gradient collapse across 80+ layers)
+       ↓
+[Softmax Head]: Computes a probability distribution over the entire vocabulary (e.g. 150,000 tokens)
+       ↓
+Next-Token Prediction: Sample next token (Temperature / Top-p) and repeat!
+```
+            """
+        )
+
+        b_c1, b_c2 = st.columns(2)
+        with b_c1:
+            st.markdown("#### The Next-Token Objective")
+            st.markdown(
+                """
+At its heart, an LLM is a giant multi-class **Classification** model! At every step, it chooses the next token out of ~150,000 discrete vocabulary classes, trained on trillions of words via Cross-Entropy Loss.
+                """
+            )
+        with b_c2:
+            st.markdown("#### The Training Hierarchy")
+            st.markdown(
+                """
+1. **Pre-training:** Next-token prediction on trillions of internet tokens (raw deep learning).
+2. **Post-training (SFT):** Instruction fine-tuning on high-quality Q&A pairs.
+3. **Alignment (RLHF / DPO):** Reinforcing helpfulness, honesty, and safety using preference rewards.
+                """
+            )
+
+        st.success(
+            "🚀 **Next Steps:** Check out the **LLM Chat** and **LLM Playground** pages in the sidebar to see how temperature, top-p, and token generation work live on your machine!"
+        )
 
 
 # --------------------------------------------------------------------------- #
@@ -2322,6 +3056,8 @@ PAGES = {
     "Visualization": page_visualization,
     "Regression": page_regression,
     "Classification": page_classification,
+    "ML Process & Concepts": page_ml_process,
+    "Deep Learning & Neural Networks": page_deep_learning_neural_networks,
     "Pipeline + Pickle": page_pipeline_pickle,
     "ML Workflow": page_ml_workflow,
     "LLM Chat": page_llm,

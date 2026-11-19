@@ -13,14 +13,16 @@ small Retrieval-Augmented Generation (RAG) demo grounded in a Trivy scan report.
 | 3 | NumPy | arrays & reshape, indexing/slicing, broadcasting, aggregations, matrix ops, randomness, visualisations |
 | 4 | Pandas | Series/DataFrame, describe, filter, parsing scan output |
 | 5 | Visualization | chart gallery, distributions & skew, pairplots, heatmaps/clustermaps, feature selection, stacked charts, BI dashboard |
-| 6 | Regression | linear regression + MSE / R² |
-| 7 | Classification | logistic regression / KNN + confusion matrix |
-| 8 | Pipeline + Pickle | `Pipeline`, joblib save → load → predict |
-| 9 | ML Workflow | guided steps: select → clean → filter/features → explore → train → pipeline & predict |
-| 10 | LLM Chat | OpenAI-compatible chat & code-gen (works with local Qwen) |
-| 11 | LLM Playground | temperature / top-p / max-tokens explained, live speed metrics |
-| 12 | RAG (Trivy) | TF-IDF retrieval over a scan report + grounded answers |
-| 13 | RAG (summary) | query-focused summarizer over notes + tuning guide and key lessons |
+| 6 | Regression | linear regression + MSE / R² + history & metrics |
+| 7 | Classification | multi-model comparison, metrics, deterministic ML vs LLMs |
+| 8 | ML Process & Concepts | Google Developer 7 steps, overfitting/underfitting, feature engineering, unsupervised & ensemble learning, big data & embeddings |
+| 9 | Deep Learning & Neural Networks | artificial neuron, activations, backpropagation, architecture evolution, bridge to modern LLMs |
+| 10 | Pipeline + Pickle | `Pipeline`, joblib save → load → predict |
+| 11 | ML Workflow | guided steps: select → clean → filter/features → explore → train → pipeline & predict |
+| 12 | LLM Chat | OpenAI-compatible chat & code-gen (works with local Qwen) |
+| 13 | LLM Playground | temperature / top-p / max-tokens explained, live speed metrics |
+| 14 | RAG (Trivy) | TF-IDF retrieval over a scan report + grounded answers |
+| 15 | RAG (summary) | query-focused summarizer over notes + tuning guide and key lessons |
 
 ## Project layout
 
