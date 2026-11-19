@@ -58,6 +58,8 @@ ai_ml_demo/
 # 1. Create and activate a virtual environment
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
+# If macOS
+source .venv/bin/activate
 
 # 2. Install dependencies
 pip install -r requirements.txt
