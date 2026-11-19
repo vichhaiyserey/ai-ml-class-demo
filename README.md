@@ -52,9 +52,17 @@ ai_ml_demo/
 └── models/                 # saved .joblib artifacts (git-ignored)
 ```
 
+## Prerequisitews
+- Have Python installed (so that you can run command python or python3)
+- Have Git installed (so that you can clone the project)
+
 ## Setup
 
 ```powershell
+# 0. Clone project from Github
+git clone https://github.com/vichhaiyserey/ai-ml-class-demo
+cd ai-ml-class-demo
+
 # 1. Create and activate a virtual environment
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
